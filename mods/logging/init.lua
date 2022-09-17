@@ -23,6 +23,7 @@ logging = {
     -- ore = 1,
     -- soil = 1,
     -- stone = 1,
+    -- tree = 1,
     -- water = 1,
   }
 }
