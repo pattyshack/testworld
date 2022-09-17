@@ -18,18 +18,18 @@ logging = {
   debug_log_level_map = {
     default = -1,  -- default level
 
-    -- base = -1,
-    -- stone = -1,
+    -- base = 1,
+    -- stone = 1,
   }
 }
 
 function logging.debug_log_level(module_name)
-    local level = logging.debug_log_level_map[module_name]
-    if level ~= nil then
-        return level
-    end
+  local level = logging.debug_log_level_map[module_name]
+  if level ~= nil then
+    return level
+  end
 
-    return logging.debug_log_level_map["default"]
+  return logging.debug_log_level_map["default"]
 end
 
 function logging.should_log_debug(module_name, verbose_level)
@@ -63,8 +63,8 @@ end
 
 function logging.err(module_name, template, ...)
   minetest.log(
-    "error",
-    "[".. module_name .."]: " .. string.format(template, unpack({...})))
+      "error",
+      "[".. module_name .."]: " .. string.format(template, unpack({...})))
 end
 
 function logging.log(log_level, module_name, template, ...)
