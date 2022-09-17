@@ -19,6 +19,7 @@ logging = {
     default = -1,  -- default level
 
     -- base = 1,
+    -- ore = 1,
     -- soil = 1,
     -- stone = 1,
     -- water = 1,
@@ -41,9 +42,9 @@ end
 function logging.verbose(module_name, verbose_level, template, ...)
   if logging.should_log_debug(module_name, verbose_level) then
     minetest.log(
-        "none",
-        "DEBUG[" .. module_name .. "]: " ..
-            string.format(template, unpack({...})))
+      "none",
+      "DEBUG[" .. module_name .. "]: " ..
+        string.format(template, unpack({...})))
   end
 end
 
@@ -53,20 +54,20 @@ end
 
 function logging.info(module_name, template, ...)
   minetest.log(
-      "none", -- "info" doesn't work ...
-      "INFO[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "none", -- "info" doesn't work ...
+    "INFO[".. module_name .."]: " .. string.format(template, unpack({...})))
 end
 
 function logging.warn(module_name, template, ...)
   minetest.log(
-      "warning",
-      "[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "warning",
+    "[".. module_name .."]: " .. string.format(template, unpack({...})))
 end
 
 function logging.err(module_name, template, ...)
   minetest.log(
-      "error",
-      "[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "error",
+    "[".. module_name .."]: " .. string.format(template, unpack({...})))
 end
 
 function logging.log(log_level, module_name, template, ...)
@@ -80,9 +81,9 @@ function logging.log(log_level, module_name, template, ...)
     logging.err(module_name, template, unpack({...}))
   else
     minetest.log(
-        "none", -- "info" doesn't work ...
-        "UNKNOWN(".. log_level .. ")[".. module_name .."]: " ..
-            string.format(template, unpack({...})))
+      "none", -- "info" doesn't work ...
+      "UNKNOWN(".. log_level .. ")[".. module_name .."]: " ..
+        string.format(template, unpack({...})))
   end
 end
 
@@ -91,11 +92,11 @@ local function pretty_log_value(log_level, module_name, value, indent, prefix)
     logging.log(log_level, module_name, "%s%s{", indent, prefix)
     for k, v in pairs(value) do
       pretty_log_value(
-          log_level,
-          module_name,
-          v,
-          indent .. "    ",
-          k .. " = ")
+        log_level,
+        module_name,
+        v,
+        indent .. "    ",
+        k .. " = ")
     end
     logging.log(log_level, module_name, indent .. "},")
   else
