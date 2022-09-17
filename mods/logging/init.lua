@@ -19,6 +19,7 @@ logging = {
     default = -1,  -- default level
 
     -- base = 1,
+    -- metal = 1,
     -- ore = 1,
     -- soil = 1,
     -- stone = 1,
