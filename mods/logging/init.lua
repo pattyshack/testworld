@@ -20,6 +20,7 @@ logging = {
 
     -- base = 1,
     -- stone = 1,
+    -- water = 1,
   }
 }
 

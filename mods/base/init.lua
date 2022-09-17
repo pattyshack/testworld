@@ -50,7 +50,7 @@ function Module:id_to_default_tile(id)
 end
 
 function Module:name_to_default_tile(name)
-  self:id_to_default_tile(self:name_to_id(name))
+  return self:id_to_default_tile(self:name_to_id(name))
 end
 
 function Module:_populate_missing_params(name, params, item_type)
