@@ -34,12 +34,12 @@ function Logger:_init(module_name)
 end
 
 function Logger:debug_log_level()
-  local level = self.debug_log_level_map[self.module_name]
+  local level = Logger.debug_log_level_map[self.module_name]
   if level ~= nil then
     return level
   end
 
-  return self.debug_log_level_map["default"]
+  return Logger.debug_log_level_map["default"]
 end
 
 function Logger:should_log_debug(verbose_level)
