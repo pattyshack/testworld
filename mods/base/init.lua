@@ -26,19 +26,11 @@ function base.list_all_registered(predicate)
   return result
 end
 
-Module = {}
+Module = Class()
 
-function Module:new(module_name)
-  module_name = module_name or minetest.get_current_modname()
-
-  local module = {}
-  setmetatable(module, self)
-  self.__index = self
-
+function Module:_init(module_name)
   self.module_name = module_name or minetest.get_current_modname()
-  self.logger = Logger:new(self.module_name)
-
-  return module
+  self.logger = Logger(self.module_name)
 end
 
 function Module:name_to_id(name)
@@ -83,7 +75,7 @@ function Module:_populate_missing_params(name, params, item_type)
 end
 
 function Module:_register(name, params, item_type, register_func)
-  params = Module:_populate_missing_params(name, params, item_type)
+  params = self:_populate_missing_params(name, params, item_type)
 
   local id = params["id"]
 

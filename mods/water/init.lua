@@ -1,7 +1,7 @@
 water = {
 }
 
-local module = Module:new()
+local module = Module()
 
 local function register_water(water_type)
   local water_source = water_type .. " Source"

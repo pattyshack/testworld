@@ -1,7 +1,7 @@
 metal = {
 }
 
-local module = Module:new()
+local module = Module()
 
 local function register_metal(metal_name)
   module:register_craftitem(

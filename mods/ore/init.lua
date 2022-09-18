@@ -10,7 +10,7 @@ function ore.is_metal_lump(def)
     def["groups"]["ore_lump"] == 1
 end
 
-local module = Module:new()
+local module = Module()
 
 local function register_ore(stone_id, stone_def, ore_name, ore_type)
   local stone_tile = module:id_to_default_tile(stone_id)

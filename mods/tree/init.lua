@@ -12,7 +12,7 @@ function tree.is_tree_trunk(def)
   return def["groups"]["tree_trunk"] == 1
 end
 
-local module = Module:new()
+local module = Module()
 
 local function register_tree(tree_type, hardness, leaf_type, has_fruits)
   local choppy = 2

@@ -13,7 +13,7 @@ stone = {
   MOSSY_COBBLE = 6,
 }
 
-local module = Module:new()
+local module = Module()
 
 function stone.is_raw_hard_stone(def)
   return def["groups"]["stone_hardness"] == stone.HARD and

@@ -24,7 +24,7 @@ local dirt_variant_params = {
     {" With Grass Footsteps", "soil_grass.png^soil_footsteps.png", "soil_grass_side.png"},
 }
 
-local module = Module:new()
+local module = Module()
 
 local function register_dirt(dirt_name, wetness, additional_variants)
     local groups = {

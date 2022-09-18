@@ -1,7 +1,7 @@
 wood = {
 }
 
-local module = Module:new()
+local module = Module()
 
 local function register_lumber(trunk_def)
   local trunk_groups = trunk_def["groups"]

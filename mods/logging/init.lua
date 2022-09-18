@@ -47,7 +47,7 @@ function logging.verbose(module_name, verbose_level, template, ...)
     minetest.log(
       "none",
       "DEBUG[" .. module_name .. "]: " ..
-        string.format(template, unpack({...})))
+        string.format(template, ...))
   end
 end
 
@@ -58,35 +58,35 @@ end
 function logging.info(module_name, template, ...)
   minetest.log(
     "none", -- "info" doesn't work ...
-    "INFO[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "INFO[".. module_name .."]: " .. string.format(template, ...))
 end
 
 function logging.warn(module_name, template, ...)
   minetest.log(
     "warning",
-    "[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "[".. module_name .."]: " .. string.format(template, ...))
 end
 
 function logging.err(module_name, template, ...)
   minetest.log(
     "error",
-    "[".. module_name .."]: " .. string.format(template, unpack({...})))
+    "[".. module_name .."]: " .. string.format(template, ...))
 end
 
 function logging.log(log_level, module_name, template, ...)
   if log_level == logging.DEBUG then
-    logging.debug(module_name, template, unpack({...}))
+    logging.debug(module_name, template, ...)
   elseif log_level == logging.INFO then
-    logging.info(module_name, template, unpack({...}))
+    logging.info(module_name, template, ...)
   elseif log_level == logging.WARN then
-    logging.warn(module_name, template, unpack({...}))
+    logging.warn(module_name, template, ...)
   elseif log_level == logging.ERR then
-    logging.err(module_name, template, unpack({...}))
+    logging.err(module_name, template, ...)
   else
     minetest.log(
       "none", -- "info" doesn't work ...
       "UNKNOWN(".. log_level .. ")[".. module_name .."]: " ..
-        string.format(template, unpack({...})))
+        string.format(template, ...))
   end
 end
 
@@ -111,18 +111,11 @@ function logging.pretty_log_value(log_level, module_name, value)
   pretty_log_value(log_level, module_name, value, "    ", "")
 end
 
-VerboseDebugLogger = {}
+VerboseDebugLogger = Class()
 
-function VerboseDebugLogger:new(module_name, verbose_level)
-  local logger = {
-    module_name = module_name,
-    verbose_level = verbose_level,
-  }
-
-  setmetatable(logger, self)
-  self.__index = self
-
-  return logger
+function VerboseDebugLogger:_init(module_name, verbose_level)
+  self.module_name = module_name
+  self.verbose_level = verbose_level
 end
 
 function VerboseDebugLogger:should_log()
@@ -130,7 +123,7 @@ function VerboseDebugLogger:should_log()
 end
 
 function VerboseDebugLogger:debug(template, ...)
-  logging.verbose(self.module_name, self.verbose_level, template, unpack({...}))
+  logging.verbose(self.module_name, self.verbose_level, template, ...)
 end
 
 function VerboseDebugLogger:pretty_log_value(value)
@@ -139,37 +132,30 @@ function VerboseDebugLogger:pretty_log_value(value)
   end
 end
 
-Logger = {}
+Logger = Class()
 
-function Logger:new(module_name)
-  local logger = {
-    module_name = module_name or minetest.get_current_modname(),
-  }
-
-  setmetatable(logger, self)
-  self.__index = self
-
-  return logger
+function Logger:_init(module_name)
+  self.module_name = module_name or minetest.get_current_modname()
 end
 
 function Logger:debug(template, ...)
-  logging.debug(self.module_name, template, unpack({...}))
+  logging.debug(self.module_name, template, ...)
 end
 
 function Logger:info(template, ...)
-  logging.info(self.module_name, template, unpack({...}))
+  logging.info(self.module_name, template, ...)
 end
 
 function Logger:warn(template, ...)
-  logging.warn(self.module_name, template, unpack({...}))
+  logging.warn(self.module_name, template, ...)
 end
 
 function Logger:err(template, ...)
-  logging.err(self.module_name, template, unpack({...}))
+  logging.err(self.module_name, template, ...)
 end
 
 function Logger:log(log_level, template, ...)
-  logging.log(log_level, self.module_name, template, unpack({...}))
+  logging.log(log_level, self.module_name, template, ...)
 end
 
 function Logger:pretty_log_value(log_level, value)
@@ -177,5 +163,5 @@ function Logger:pretty_log_value(log_level, value)
 end
 
 function Logger:v(verbose_level)
-  return VerboseDebugLogger:new(self.module_name, verbose_level)
+  return VerboseDebugLogger(self.module_name, verbose_level)
 end
