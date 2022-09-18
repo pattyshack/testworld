@@ -1,3 +1,8 @@
+dofile(minetest.get_modpath(minetest.get_current_modname()) .. "/import.lua")
+
+import("class")
+import("logging")
+
 base = {
   registered = {},
 }
