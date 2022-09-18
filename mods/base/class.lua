@@ -4,12 +4,15 @@
 -- support is_a.
 function Class(BaseClass)
   local class = {}
-  class.__index = class
 
   -- copy all contents from base class
   for k, v in pairs(BaseClass or {}) do
-    class[k] = v
+    if k ~= "__index" then
+      class[k] = v
+    end
   end
+
+  class.__index = class
 
   setmetatable(
     class,
