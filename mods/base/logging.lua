@@ -20,6 +20,7 @@ Logger = Class({
 
     -- base = 1,
     -- lumber = 1,
+    -- mapgen = 1,
     -- metal = 1,
     -- ore = 1,
     -- soil = 1,
