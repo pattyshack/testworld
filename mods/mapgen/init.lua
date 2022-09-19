@@ -31,6 +31,10 @@ LayerGenerator = Class()
 function LayerGenerator:_init(layer_spec)
   self.layer_spec = layer_spec
 
+  self.node_generator = RandomContentIdSelector(
+    self.layer_spec.weighted_node_list,
+    self.layer_spec.seed_offset)
+
   self.depth_delta = layer_spec.max_depth - layer_spec.min_depth
 
   self.depth_noise = nil
@@ -38,8 +42,7 @@ function LayerGenerator:_init(layer_spec)
 end
 
 function LayerGenerator:reset(min_point, max_point, map_seed)
-  self.node_generator = RandomContentIdSelector(
-    self.layer_spec.weighted_node_list,
+  self.node_generator:seed(
     map_seed + self.layer_spec.seed_offset +
       min_point.x * 1000 + min_point.y * 100 + min_point.z * 10)
 
@@ -265,7 +268,6 @@ minetest.register_on_generated(function(min_point, max_point, seed)
 
 
             local node = layer:next_node()
-
             logger:v(4):debug(
               "Convert (%s, %s, %s) to layer %s (%s)",
               x,

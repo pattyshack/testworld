@@ -11,6 +11,10 @@ function RandomSelector:_init(odds_list, seed)
   self.odds_list = odds_list
 end
 
+function RandomSelector:seed(seed)
+  self.random = PcgRandom(seed)
+end
+
 function RandomSelector:next()
   local rand = self.random:next(1, self.sum)
   local acc = 0
