@@ -1,24 +1,34 @@
-RandomSelector = Class()
+Selectable = Class()
 
-function RandomSelector:_init(odds_list, seed)
-  local sum = 0
-  for idx, tuple in ipairs(odds_list) do
-    sum = sum + tuple[1]
+function Selectable:_init(weighted_item_list)
+  local total = 0
+  for idx, tuple in ipairs(weighted_item_list) do
+    total = total + tuple[1]
   end
 
-  self.random = PcgRandom(seed)
-  self.sum = sum
-  self.odds_list = odds_list
+  self.total_weight = total
+  self.weighted_item_list = weighted_item_list
 end
 
-function RandomSelector:seed(seed)
+RandomGenerator = Class()
+
+function RandomGenerator:_init(seed)
   self.random = PcgRandom(seed)
 end
 
-function RandomSelector:next()
-  local rand = self.random:next(1, self.sum)
+function RandomGenerator:seed(map_seed, seed_offset, x, y, z)
+  self.random = PcgRandom(
+    map_seed +
+    (seed_offset or 0) +
+    (x or 0) * 1000 +
+    (y or 0) * 100 +
+    (z or 0) * 10)
+end
+
+function RandomGenerator:select(selectable)
+  local rand = self.random:next(1, selectable.total_weight)
   local acc = 0
-  for idx, tuple in ipairs(self.odds_list) do
+  for idx, tuple in ipairs(selectable.weighted_item_list) do
     acc = acc + tuple[1]
     if rand <= acc then
       return tuple[2]
@@ -27,18 +37,9 @@ function RandomSelector:next()
 
   assert(
     false,
-    string.format("PROGRAMMING ERROR %s > %s (== %s)", rand, self.sum, acc))
-end
-
-RandomContentIdSelector = Class(RandomSelector)
-
-function RandomContentIdSelector:_init(odds_list, seed)
-  local odds_content_id_list = {}
-  for idx, tuple in ipairs(odds_list) do
-    table.insert(
-      odds_content_id_list,
-      {tuple[1], minetest.get_content_id(tuple[2])})
-  end
-
-  RandomSelector._init(self, odds_content_id_list, seed)
+    string.format(
+      "PROGRAMMING ERROR %s > %s (== %s)",
+      rand,
+      selectable.total_weight,
+      acc))
 end

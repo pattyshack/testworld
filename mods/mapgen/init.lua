@@ -29,11 +29,17 @@ end
 LayerGenerator = Class()
 
 function LayerGenerator:_init(layer_spec)
+  local weighted_content_id_list = {}
+  for idx, tuple in ipairs(layer_spec.weighted_node_list) do
+    table.insert(
+      weighted_content_id_list,
+      {tuple[1], minetest.get_content_id(tuple[2])})
+  end
+
   self.layer_spec = layer_spec
 
-  self.node_generator = RandomContentIdSelector(
-    self.layer_spec.weighted_node_list,
-    self.layer_spec.seed_offset)
+  self.random_generator = RandomGenerator(self.layer_spec.seed_offset)
+  self.selectable = Selectable(weighted_content_id_list)
 
   self.depth_delta = layer_spec.max_depth - layer_spec.min_depth
 
@@ -42,9 +48,12 @@ function LayerGenerator:_init(layer_spec)
 end
 
 function LayerGenerator:reset(min_point, max_point, map_seed)
-  self.node_generator:seed(
-    map_seed + self.layer_spec.seed_offset +
-      min_point.x * 1000 + min_point.y * 100 + min_point.z * 10)
+  self.random_generator:seed(
+    map_seed,
+    self.layer_spec.seed_offset,
+    min_point.x,
+    min_point.z,
+    min_point.y)
 
   if self.depth_delta ~= 0 then
     self:reset_depth_noise(min_point, max_point, map_seed)
@@ -111,7 +120,7 @@ function LayerGenerator:reset_depth_noise(min_point, max_point, map_seed)
 end
 
 function LayerGenerator:next_node()
-  return self.node_generator:next()
+  return self.random_generator:select(self.selectable)
 end
 
 function LayerGenerator:depth(x, y)
