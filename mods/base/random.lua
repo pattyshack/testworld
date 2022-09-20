@@ -16,13 +16,17 @@ function RandomGenerator:_init(seed)
   self.random = PcgRandom(seed)
 end
 
-function RandomGenerator:seed(map_seed, seed_offset, x, y, z)
+function RandomGenerator:seed(seed, seed_offset, x, y, z)
   self.random = PcgRandom(
-    map_seed +
+    seed +
     (seed_offset or 0) +
     (x or 0) * 1000 +
     (y or 0) * 100 +
     (z or 0) * 10)
+end
+
+function RandomGenerator:next(min, max)
+  return self.random:next(min, max)
 end
 
 function RandomGenerator:select(selectable)
