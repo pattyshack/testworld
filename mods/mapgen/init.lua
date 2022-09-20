@@ -213,12 +213,37 @@ local map = {
 
 function map:initialize(min_point, max_point, seed)
   local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
-  local area = VoxelArea:new{MinEdge = emin, MaxEdge = emax}
-  vm:get_data(self.data)
+
+  -- NOTE: using much larger emerged positions than the default provided
+  -- by minetest.get_mapgen_object("voxelmanip") to deal with setting
+  -- "out of bound" nodes, such as trees.
+  --
+  -- Note that merged_delta must be in multiplies of 16
+  local emerged_delta = 16
+
+  emin.x = emin.x - emerged_delta
+  emin.y = emin.y - emerged_delta
+  emin.z = emin.z - emerged_delta
+
+  emax.x = emax.x + emerged_delta
+  emax.y = emax.y + emerged_delta
+  emax.z = emax.z + emerged_delta
+
+  self.emerged_min_x = emin.x
+  self.emerged_min_y = emin.z
+  self.emerged_min_z = emin.y
+
+  self.emerged_max_x = emax.x
+  self.emerged_max_y = emax.z
+  self.emerged_max_z = emax.y
+
+  self.vm = vm
+  self.vm:read_from_map(emin, emax)
+  self.vm:get_data(self.data)
 
   self.seed = seed
-  self.vm = vm
-  self.area = area
+
+  self.area = VoxelArea:new{MinEdge = emin, MaxEdge = emax}
 
   self.min_x = min_point.x
   self.min_y = min_point.z
@@ -246,21 +271,22 @@ function map:initialize(min_point, max_point, seed)
   end
 
   self.forest = self.forest or ForestGenerator(forest_spec)
+
 end
 
 function map:get(x, y, z)
-    return self.data[self.area:index(x, z, y)]
+  return self.data[self.area:index(x, z, y)]
 end
 
 function map:set(x, y, z, id)
-    self.data[self.area:index(x, z, y)] = id
+  self.data[self.area:index(x, z, y)] = id
 end
 
 function map:update()
-    self.vm:set_data(self.data)
-    self.vm:calc_lighting()
-    self.vm:write_to_map()
-    self.vm:update_liquids()
+  self.vm:set_data(self.data)
+  self.vm:calc_lighting()
+  self.vm:write_to_map()
+  self.vm:update_liquids()
 end
 
 minetest.register_on_generated(function(min_point, max_point, seed)
@@ -272,13 +298,14 @@ minetest.register_on_generated(function(min_point, max_point, seed)
   local water_source = minetest.get_content_id("water:water_source")
   local river_water_source = minetest.get_content_id("water:river_water_source")
 
+  -- generate soil layers and pre-select where trees are to be generated
   local trees = {}
-
   for x = map.min_x, map.max_x do
     for y = map.min_y, map.max_y do
       -- define is_underwater / is_surface out here to deal with "goto next_z"
       local is_underwater = false
       local is_surface = false
+      local one_up_node = nil
 
       local z = map.max_z
       while z >= map.min_z do
@@ -288,16 +315,12 @@ minetest.register_on_generated(function(min_point, max_point, seed)
           goto next_z
         end
 
-        is_underwater = false
-        is_surface = false
-        if z + 1 <= map.max_z then
-          local one_up_node = map:get(x, y, z + 1)
+        one_up_node = map:get(x, y, z + 1)
 
-          is_underwater = one_up_node == water_source or
-            one_up_node == river_water_source
+        is_underwater = one_up_node == water_source or
+          one_up_node == river_water_source
 
-          is_surface = one_up_node == air or is_underwater
-        end
+        is_surface = one_up_node == air or is_underwater
 
         if is_surface == false then
           goto next_z
@@ -344,7 +367,7 @@ minetest.register_on_generated(function(min_point, max_point, seed)
             map:set(x, y, z, node)
 
             z = z - 1
-            if z < map.min_z then
+            if z < map.emerged_min_z then  -- allow going "out of bound"
               goto next_xy
             end
           end
@@ -370,6 +393,7 @@ minetest.register_on_generated(function(min_point, max_point, seed)
       local z = coord[3] + soil_z
 
       if map:get(x, y, z) ~= air then
+
         goto continue
       end
 
@@ -390,6 +414,7 @@ minetest.register_on_generated(function(min_point, max_point, seed)
       local z = coord[3] + soil_z
 
       if map:get(x, y, z) ~= air then
+
         goto continue
       end
 
