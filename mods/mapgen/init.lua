@@ -160,6 +160,51 @@ soil_horizon = {
   -- bedrock
 }
 
+ForestSpec = Class()
+
+-- forest_density in percentage basis points [0, 10000]
+--
+-- weighted_tree_list: list of {<positive int>,  <tree type name>} tuples.
+--  The forest's trees are chosen from this weighted list.
+--
+function ForestSpec:_init(forest_density, weighted_tree_list, seed_offset)
+  self.forest_density = forest_density
+  self.weighted_tree_list = Selectable(weighted_tree_list)
+  self.seed_offset = seed_offset
+end
+
+ForestGenerator = Class()
+
+function ForestGenerator:_init(forest_spec)
+  self.random = RandomGenerator(forest_spec.seed_offset)
+  self.forest_spec = forest_spec
+end
+
+function ForestGenerator:seed(map_seed, x, y, z)
+  self.random:seed(map_seed, self.forest_spec.seed_offset, x, y, z)
+end
+
+-- This return either nil (don't plant a tree) or a TreeSpec (plant a tree)
+function ForestGenerator:next()
+  local roll = self.random:next(1, 10000)
+  if roll > self.forest_spec.forest_density then
+    return nil
+  end
+
+  local tree_type = self.random:select(self.forest_spec.weighted_tree_list)
+  local tree_spec = tree.species[tree_type]
+
+  local idx = self.random:next(1, table.getn(tree_spec.prototypes))
+  return tree_spec.prototypes[idx]
+end
+
+forest_spec = ForestSpec(
+  50, -- 0.5%
+  {
+    {1, "Apple"},
+  },
+  42)
+
 -- Using a singleton instead of a real class to enable (data, noise map, etc)
 -- buffer reuse.
 local map = {
@@ -199,6 +244,8 @@ function map:initialize(min_point, max_point, seed)
   for idx, layer in ipairs(self.soil_horizon_layers) do
     layer:reset(min_point, max_point, seed)
   end
+
+  self.forest = self.forest or ForestGenerator(forest_spec)
 end
 
 function map:get(x, y, z)
@@ -224,6 +271,8 @@ minetest.register_on_generated(function(min_point, max_point, seed)
   local stone = minetest.get_content_id("stone:stone")
   local water_source = minetest.get_content_id("water:water_source")
   local river_water_source = minetest.get_content_id("water:river_water_source")
+
+  local trees = {}
 
   for x = map.min_x, map.max_x do
     for y = map.min_y, map.max_y do
@@ -252,6 +301,13 @@ minetest.register_on_generated(function(min_point, max_point, seed)
 
         if is_surface == false then
           goto next_z
+        end
+
+        if is_underwater == false then
+          local tree_prototype = map.forest:next()
+          if tree_prototype ~= nil then
+            table.insert(trees, {{x, y, z}, tree_prototype})
+          end
         end
 
         logger:v(2):debug("Found surface (%s, %s, %s)", x, y, z)
@@ -300,6 +356,46 @@ minetest.register_on_generated(function(min_point, max_point, seed)
         z = z - 1
       end
       ::next_xy::
+    end
+  end
+
+  -- generate tree trunks
+  for treeIdx, entry in ipairs(trees) do
+    local soil_x, soil_y, soil_z = entry[1][1], entry[1][2], entry[1][3]
+
+    for nodeIdx, xyz_node_content in ipairs(entry[2][1]) do
+      local coord = xyz_node_content[1]
+      local x = coord[1] + soil_x
+      local y = coord[2] + soil_y
+      local z = coord[3] + soil_z
+
+      if map:get(x, y, z) ~= air then
+        goto continue
+      end
+
+      map:set(x, y, z, xyz_node_content[3])
+
+      ::continue::
+    end
+  end
+
+  -- generate leaves
+  for treeIdx, entry in ipairs(trees) do
+    local soil_x, soil_y, soil_z = entry[1][1], entry[1][2], entry[1][3]
+
+    for nodeIdx, xyz_node_content in ipairs(entry[2][2]) do
+      local coord = xyz_node_content[1]
+      local x = coord[1] + soil_x
+      local y = coord[2] + soil_y
+      local z = coord[3] + soil_z
+
+      if map:get(x, y, z) ~= air then
+        goto continue
+      end
+
+      map:set(x, y, z, xyz_node_content[3])
+
+      ::continue::
     end
   end
 

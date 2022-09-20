@@ -6,141 +6,137 @@ tree = {
   -- leaf type
   LEAFY = 1,
   NEEDLE = 2,
+
+  module = Module(),
+
+  -- tree type -> TreeSpec
+  species = {},
 }
+
+import("nodes")
+import("generators")
 
 function tree.is_tree_trunk(def)
   return def["groups"]["tree_trunk"] == 1
 end
 
-local module = Module()
+TreeSpec = Class()
 
-local function register_tree(tree_type, hardness, leaf_type, has_fruits)
-  local choppy = 2
-  local oddly_breakable_by_hand = 1
-  if hardness == tree.HARD then
-    choppy = 3
-    oddly_breakable_by_hand = nil
-  end
+function TreeSpec:_init(
+  tree_type,
+  trunk_id,
+  leaves_id,
+  sapling_id,
+  fruit_id,
+  trunk_generator,
+  leaves_generator,
+  num_prototypes)
 
-  local tree_name = tree_type .. " Tree"
-  local thrunk_name = tree_name .. " Trunk"
-  local tree_tile = module:name_to_default_tile(thrunk_name)
-  local tree_top_tile = module:name_to_default_tile(thrunk_name .. " top")
-  module:register_node(
-    thrunk_name,
-    {
-      tiles = {tree_top_tile, tree_top_tile, tree_tile},
-      is_ground_content = false,
-      groups = {
-        choppy = choppy,
-        oddly_breakable_by_hand = oddly_breakable_by_hand,
-        tree_hardness = hardness,
-        tree_trunk = 1,
-      },
-      -- TODO: on_place rotate node
-      -- TODO add flammable
+  self.tree_type = tree_type
+  self.trunk_id = trunk_id
+  self.leaves_id = leaves_id
+  self.sapling_id = sapling_id
+  self.fruit_id = fruit_id
+  self.trunk_generator = trunk_generator
+  self.leaves_generator = leaves_generator
 
-      tree_type = tree_type,
-    })
+  -- Pre-generate tree prototypes for reuse to speed up mapgen
+  self.prototypes = {}
+  if trunk_generator and leaves_generator then
+    local trunk_content_id = minetest.get_content_id(trunk_id)
 
-  local sapling_id = module:register_node(
-    tree_name .. " Sapling",
-    {
-      drawtype = "plantlike",
-      paramtype = "light",
-      sunlight_propagates = true,
-      walkable = false,
-      is_ground_content = false,
-      selection_box = {
-        type = "fixed",
-        fixed = {-4 / 16, -0.5, -4 / 16, 4 / 16, 7 / 16, 4 / 16}
-      },
-      groups = {
-        snappy = 2,
-        dig_immediate = 3,
-        attached_node = 1,
-        tree_sapling = 1,
+    for i = 1, num_prototypes do
+      local trunks, tree_top = trunk_generator:generate_trunk()
+      local leaves = leaves_generator:generate_leaves(
+        trunks,
+        tree_top,
+        leaves_id,
+        fruit_id)
 
-        -- TODO add flammable
-      },
+      local occupied = {}
 
-      -- TODO add on_construct, on_timer, on_place for growing
+      local trunk_prototype = {}
+      for idx, coord in ipairs(trunks) do
+        table.insert(
+          trunk_prototype,
+          {coord, trunk_id, trunk_content_id})
 
-      tree_type = tree_type,
-    })
+        local x, y, z = coord[1], coord[2], coord[3]
+        occupied[x] = occupied[x] or {}
+        occupied[x][y] = occupied[x][y] or {}
+        occupied[x][y][z] = 1
+      end
 
-  local leaves_name = tree_name .. " Leaves"
-  if leaf_type == tree.NEEDLE then
-    leaves_name = tree_name .. " Needles"
-  end
+      local leaves_prototype = {}
+      for idx, coord_node in ipairs(leaves) do
+        local coord = coord_node[1]
+        local x, y, z = coord[1], coord[2], coord[3]
+        if ((occupied[x] or {})[y] or {})[z] then
+          goto continue
+        end
 
-  local leaves_id = module:name_to_id(leaves_name)
+        occupied[x] = occupied[x] or {}
+        occupied[x][y] = occupied[x][y] or {}
+        occupied[x][y][z] = 1
 
-  module:register_node(
-    leaves_name,
-    {
-      drawtype = "allfaces_optional",
-      waving = 2,
-      paramtype = "light",
-      is_ground_content = false,
-      groups = {
-        snappy = 3,
-        tree_leaf_type = leaf_type,
-        tree_leaves = 1,
+        table.insert(coord_node, minetest.get_content_id(coord_node[2]))
+        table.insert(leaves_prototype, coord_node)
 
-        -- TODO add leave decay
-        -- TODO add flammable
-      },
-      drop = {
-        max_item = 1,
-        items = {
-          {
-            items = {sapling_id},
-            rarity = 20,
-          },
-          {
-            items = {leaves_id},
-          },
-        },
-      },
+        ::continue::
+      end
 
-      -- TODO add after_plae_node = after_place_leaves
-
-      tree_type = tree_type,
-    })
-
-  if has_fruits then
-    module:register_node(
-      tree_type,
-      {
-        drawtype = "plantlike",
-        paramtype = "light",
-        sunlight_propagates = true,
-        walkable = false,
-        is_ground_content = false,
-        selection_box = {
-          type = "fixed",
-          fixed = {-3 / 16, -7 / 16, -3 / 16, 3 / 16, 4 / 16, 3 / 16}
-        },
-        groups = {
-          fleshy = 3,
-          dig_immediate = 3,
-          tree_fruit = 1,
-          -- TODO flammable
-          -- TODO leafdecay
-          -- TODO leafdecay_drop
-        },
-
-        -- TODO on_use eat
-        -- TODO after_dig_node grow apple
-        -- TODO after_place_node
-
-        tree_type = tree_type,
-      })
+      table.insert(self.prototypes, {trunk_prototype, leaves_prototype})
+    end
   end
 end
 
-register_tree("Apple", tree.SOFT, tree.LEAFY, true)
+local function register_tree(
+  tree_type,
+  hardness,
+  leaf_type,
+  has_fruits,
+  trunk_generator,
+  leaves_generator,
+  num_prototypes)
+
+  local trunk_id, leaves_id, sapling_id, fruit_id = register_tree_nodes(
+    tree_type,
+    hardness,
+    leaf_type,
+    has_fruits)
+
+  tree.species[tree_type] = TreeSpec(
+    tree_type,
+    trunk_id,
+    leaves_id,
+    sapling_id,
+    fruit_id,
+    trunk_generator,
+    leaves_generator,
+    num_prototypes)
+end
+
+register_tree(
+  "Apple",
+  tree.SOFT,
+  tree.LEAFY,
+  true,
+  SimpleTrunkGenerator(
+    {
+      {85, 5},
+      {10, 6},
+      {5, 4},
+    },
+    2),
+  BoxLeavesGenerator(
+    {
+      {18, BoxLeavesSpec(5, 4, 2, 66, 3) },
+      {1, BoxLeavesSpec(5, 5, 3, 66, 3) },
+      {1, BoxLeavesSpec(5, 5, 2, 66, 3) },
+    },
+    2),
+  200)
+
 register_tree("Jungle", tree.SOFT, tree.LEAFY, false)
 register_tree("Acacia", tree.SOFT, tree.LEAFY, false)
 register_tree("Aspen", tree.HARD, tree.LEAFY, false)
