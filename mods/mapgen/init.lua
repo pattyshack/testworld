@@ -404,6 +404,7 @@ minetest.register_on_generated(function(min_point, max_point, seed)
   end
 
   -- generate leaves
+  -- TODO shuffle leaves insert ordering
   for treeIdx, entry in ipairs(trees) do
     local soil_x, soil_y, soil_z = entry[1][1], entry[1][2], entry[1][3]
 
