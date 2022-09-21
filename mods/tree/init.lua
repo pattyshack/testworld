@@ -128,11 +128,37 @@ register_tree(
       {5, 4},
     },
     2),
-  BoxLeavesGenerator(
+  CompositeLeavesGenerator(
     {
-      {18, BoxLeavesSpec(5, 4, 2, 66, 3) },
-      {1, BoxLeavesSpec(5, 5, 3, 66, 3) },
-      {1, BoxLeavesSpec(5, 5, 2, 66, 3) },
+      {
+        12,
+        BoxLeavesGenerator(
+          {
+            {18, ColumnLeavesSpec(3, 4, 2, 66, 3) },
+            {1, ColumnLeavesSpec(3, 5, 3, 66, 3) },
+            {1, ColumnLeavesSpec(3, 5, 2, 66, 3) },
+          },
+          2),
+      },
+      {
+        1,
+        DiagonalBoxLeavesGenerator(
+          {
+            {1, ColumnLeavesSpec(3, 4, 2, 66, 3) },
+            {1, ColumnLeavesSpec(3, 5, 3, 66, 3) },
+            {1, ColumnLeavesSpec(3, 5, 2, 66, 3) },
+          },
+          2),
+      },
+      {
+        7,
+        EllipsoidLeavesGenerator(
+          {
+            {1, EllipsoidLeavesSpec(3.5, 3.5, 2.5, 0, 66, 3)},
+            {1, EllipsoidLeavesSpec(3.5, 3.5, 3, 0, 66, 3)},
+          },
+          2),
+      },
     },
     2),
   200)
